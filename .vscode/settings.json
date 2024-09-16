@@ -5,6 +5,7 @@
         "complex": "cpp",
         "functional": "cpp",
         "ratio": "cpp",
-        "cstdint": "cpp"
+        "cstdint": "cpp",
+        "type_traits": "cpp"
     }
 }
