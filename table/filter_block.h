@@ -27,26 +27,39 @@ class FilterPolicy;
 //
 // The sequence of calls to FilterBlockBuilder must match the regexp:
 //      (StartBlock AddKey*)* Finish
+/*Filter Block 的作用就是对 SSTable 中 Data Block 的所有 User Key 建立布隆过滤器，并将结果（string 对象）写入到 Filter Block 中*/
 class FilterBlockBuilder {
  public:
   explicit FilterBlockBuilder(const FilterPolicy*);
 
   FilterBlockBuilder(const FilterBlockBuilder&) = delete;
   FilterBlockBuilder& operator=(const FilterBlockBuilder&) = delete;
-
+  /* 开始构建新的 Filter Block */
+  // 根据datablock的偏移量来构建新的filterblock
   void StartBlock(uint64_t block_offset);
+  /*添加一个新的 key，将在 `TableBuilder` 中被调用*/
   void AddKey(const Slice& key);
+  /*结束 Filter Block 的构建，并返回 Filter Block 的完整内容
+  1.保存内部每个filter的偏移量
+  2. filter的总字节大小
+  3.kFilterBaseLg保存
+  */
+
   Slice Finish();
 
  private:
-  void GenerateFilter();
-
-  const FilterPolicy* policy_;
-  std::string keys_;             // Flattened key contents
-  std::vector<size_t> start_;    // Starting index in keys_ of each key
-  std::string result_;           // Filter data computed so far
-  std::vector<Slice> tmp_keys_;  // policy_->CreateFilter() argument
-  std::vector<uint32_t> filter_offsets_;
+    /*生成filter
+    一个filterblock中可能包含多个filter，毕竟2k就会创建一个filter
+     */
+    void GenerateFilter();
+    
+    const FilterPolicy* policy_;    /* filter 类型，如 BloomFilterPolicy */
+    std::string keys_;              /* User Keys，全部塞到一个 string 中 */
+    std::vector<size_t> start_;     /* 每一个 User Key 在 keys_ 中的起始位置 offset */
+    std::string result_;            /* keys_ 通过 policy_ 计算出来的 filtered data */
+    std::vector<Slice> tmp_keys_;   /* policy_->CreateFilter() 的参数 */
+    /* filter 在 result_ 中的位置，filter_offsets_.size() 就是 Bloom Filter 的数量 */
+    std::vector<uint32_t> filter_offsets_;  
 };
 
 class FilterBlockReader {

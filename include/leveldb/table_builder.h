@@ -30,6 +30,7 @@ class LEVELDB_EXPORT TableBuilder {
   // Create a builder that will store the contents of the table it is
   // building in *file.  Does not close the file.  It is up to the
   // caller to close the file after calling Finish().
+  /* WritableFile 通常为 PosixWritableFile */
   TableBuilder(const Options& options, WritableFile* file);
 
   TableBuilder(const TableBuilder&) = delete;
@@ -49,13 +50,14 @@ class LEVELDB_EXPORT TableBuilder {
   // Add key,value to the table being constructed.
   // REQUIRES: key is after any previously added key according to comparator.
   // REQUIRES: Finish(), Abandon() have not been called
+   /* 向 TableBuilder 中添加 Key-Value，这里的 Key 同样为 InternalKey */
   void Add(const Slice& key, const Slice& value);
 
   // Advanced operation: flush any buffered key/value pairs to file.
   // Can be used to ensure that two adjacent entries never live in
   // the same data block.  Most clients should not need to use this method.
   // REQUIRES: Finish(), Abandon() have not been called
-  void Flush();
+  void Flush(); /* 将缓冲区中的数据 flush 到文件中，由 leveldb 内部调用 */
 
   // Return non-ok iff some error has been detected.
   Status status() const;
@@ -81,9 +83,10 @@ class LEVELDB_EXPORT TableBuilder {
 
  private:
   bool ok() const { return status().ok(); }
-  void WriteBlock(BlockBuilder* block, BlockHandle* handle);
+  void WriteBlock(BlockBuilder* block, BlockHandle* handle); /* 序列化需要写入的 Data Block */
   void WriteRawBlock(const Slice& data, CompressionType, BlockHandle* handle);
-
+  
+  /* Rep 的作用就是隐藏具体实现 */
   struct Rep;
   Rep* rep_;
 };

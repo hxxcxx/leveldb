@@ -20,6 +20,10 @@ struct ReadOptions;
 
 // BlockHandle is a pointer to the extent of a file that stores a data
 // block or a meta block.
+/*
+BlockHandler本质就是封装了offset和size的偏移量。另外这个offset是累加的，
+比如filter block的偏移量，他是算上前面data block的偏移量的。
+*/
 class BlockHandle {
  public:
   // Maximum encoding length of a BlockHandle
@@ -50,6 +54,7 @@ class Footer {
   // Encoded length of a Footer.  Note that the serialization of a
   // Footer will always occupy exactly this many bytes.  It consists
   // of two block handles and a magic number.
+  // 2 * BlockHandle::kMaxEncodedLength + 8 ，最大长度为48
   enum { kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8 };
 
   Footer() = default;
@@ -66,7 +71,9 @@ class Footer {
   Status DecodeFrom(Slice* input);
 
  private:
+  //指向meta index块
   BlockHandle metaindex_handle_;
+  // 指向data index块
   BlockHandle index_handle_;
 };
 

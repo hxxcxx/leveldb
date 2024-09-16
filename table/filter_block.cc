@@ -17,12 +17,18 @@ static const size_t kFilterBase = 1 << kFilterBaseLg;
 
 FilterBlockBuilder::FilterBlockBuilder(const FilterPolicy* policy)
     : policy_(policy) {}
-
+/*简单来说就是这一次调用时Data Block保存到了block_offset位置，需要多少 Bloom Filter*/
 void FilterBlockBuilder::StartBlock(uint64_t block_offset) {
+  /* block_offset 可以认为是 Data Block 的结束偏移量，kFilterBase 的值其实就是 2048，
+  * 即 2KB，filter_index 就表示需要创建多少个 Bloom Filter */
   uint64_t filter_index = (block_offset / kFilterBase);
+  
   assert(filter_index >= filter_offsets_.size());
+  
+  /* filter_offsets_ 用于保存每个 Bloom Filter 的起始偏移量，因为每一个 
+    * Bloom Filter 的长度可能是不同的，虽然 base 大小为 2KB，但是 User Key 的长度不定 */
   while (filter_index > filter_offsets_.size()) {
-    GenerateFilter();
+      GenerateFilter();
   }
 }
 
@@ -67,6 +73,8 @@ void FilterBlockBuilder::GenerateFilter() {
 
   // Generate filter for current set of keys and append to result_.
   filter_offsets_.push_back(result_.size());
+
+  /*传入slice指针和key个数生成布隆结果到result中,其实布隆一个key生成的结果是uint32 4位*/
   policy_->CreateFilter(&tmp_keys_[0], static_cast<int>(num_keys), &result_);
 
   tmp_keys_.clear();

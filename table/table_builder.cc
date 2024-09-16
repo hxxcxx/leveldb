@@ -35,18 +35,22 @@ struct TableBuilder::Rep {
     index_block_options.block_restart_interval = 1;
   }
 
-  Options options;
-  Options index_block_options;
-  WritableFile* file;
-  uint64_t offset;
-  Status status;
-  BlockBuilder data_block;
-  BlockBuilder index_block;
-  std::string last_key;
-  int64_t num_entries;
-  bool closed;  // Either Finish() or Abandon() has been called.
-  FilterBlockBuilder* filter_block;
-
+  Options options;              /* Data Block Options */
+  Options index_block_options;  /* Index Block Options */
+  WritableFile* file;           /* 抽象类，决定了如何进行文件的写入，PosixWritableFile */
+  uint64_t offset;              /* Data Block 在 SSTable 中的文件偏移量 */
+  Status status;                /* 操作状态 */
+  BlockBuilder data_block;      /* 构建 Data Block 所需的 BlockBuilder */
+  BlockBuilder index_block;     /* 构建 Index Block 所需的 BlockBuilder */
+  std::string last_key;         /* 当前 Data Block 的最后一个写入 key */
+  int64_t num_entries;          /* 当前 Data Block 的写入数量 */
+  bool closed;                  /* 构建过程是否结束 */
+  FilterBlockBuilder* filter_block; /* 构建 Filter Block 所需的 BlockBuilder */
+  
+  bool pending_index_entry;     /* pending_index_entry 用于 Add() 方法中 */
+  BlockHandle pending_handle;  // Handle to add to index block
+  
+  std::string compressed_output;  /* 压缩之后的 Data Block */
   // We do not emit the index entry for a block until we have seen the
   // first key for the next data block.  This allows us to use shorter
   // keys in the index block.  For example, consider a block boundary
@@ -56,10 +60,6 @@ struct TableBuilder::Rep {
   // blocks.
   //
   // Invariant: r->pending_index_entry is true only if data_block is empty.
-  bool pending_index_entry;
-  BlockHandle pending_handle;  // Handle to add to index block
-
-  std::string compressed_output;
 };
 
 TableBuilder::TableBuilder(const Options& options, WritableFile* file)
@@ -96,14 +96,15 @@ void TableBuilder::Add(const Slice& key, const Slice& value) {
   assert(!r->closed);
   if (!ok()) return;
   if (r->num_entries > 0) {
+    /* 判断当前 key 是否大于 last_key */
     assert(r->options.comparator->Compare(key, Slice(r->last_key)) > 0);
   }
-
+  //写完一个 Data Block 之后 pending_index_entry置为true
   if (r->pending_index_entry) {
     assert(r->data_block.empty());
     r->options.comparator->FindShortestSeparator(&r->last_key, key);
     std::string handle_encoding;
-    r->pending_handle.EncodeTo(&handle_encoding);
+    r->pending_handle.EncodeTo(&handle_encoding);//datablock的handlecoding序列化到handle_encoding
     r->index_block.Add(r->last_key, Slice(handle_encoding));
     r->pending_index_entry = false;
   }
@@ -148,6 +149,7 @@ void TableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle) {
   Slice raw = block->Finish();
 
   Slice block_contents;
+  /* 默认压缩方式为 kSnappyCompression */
   CompressionType type = r->options.compression;
   // TODO(postrelease): Support more compression options: zlib?
   switch (type) {
@@ -184,8 +186,11 @@ void TableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle) {
       break;
     }
   }
+  //写进去就更新r->offset
   WriteRawBlock(block_contents, type, handle);
+  /* 清空临时存储 buffer */
   r->compressed_output.clear();
+  /* 清空 Data Block */
   block->Reset();
 }
 
@@ -235,7 +240,6 @@ Status TableBuilder::Finish() {
       filter_block_handle.EncodeTo(&handle_encoding);
       meta_index_block.Add(key, handle_encoding);
     }
-
     // TODO(postrelease): Add stats and other meta blocks
     WriteBlock(&meta_index_block, &metaindex_block_handle);
   }
@@ -244,6 +248,7 @@ Status TableBuilder::Finish() {
   if (ok()) {
     if (r->pending_index_entry) {
       r->options.comparator->FindShortSuccessor(&r->last_key);
+      /*剩余一个没有写入*/
       std::string handle_encoding;
       r->pending_handle.EncodeTo(&handle_encoding);
       r->index_block.Add(r->last_key, Slice(handle_encoding));

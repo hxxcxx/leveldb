@@ -13,7 +13,7 @@
 namespace leveldb {
 
 struct Options;
-
+// BlockBuilder主要是用于index_block/data_block/meta_index_block的构建
 class BlockBuilder {
  public:
   explicit BlockBuilder(const Options* options);
