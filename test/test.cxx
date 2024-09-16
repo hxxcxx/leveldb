@@ -2,13 +2,13 @@
 #include <string>
 #include <iostream>
 #include "leveldb/db.h"
-
+ 
 int main()
 {
     leveldb::DB *db;
     leveldb::Options options;
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, "dbtest", &db);
+    leveldb::Status status = leveldb::DB::Open(options, "//home/way/code/leveldb/test/dbtest", &db);
     assert(status.ok());
 
     std::string k1 = "name";

@@ -23,8 +23,8 @@ enum FileType {
   kDBLockFile,
   kTableFile,
   kDescriptorFile,
-  kCurrentFile,
-  kTempFile,
+  kCurrentFile,//记载当前的manifest文件名
+  kTempFile,//在repair数据库时，会重放wal日志，将这些和已有的sst合并写到临时文件中去，成功之后调用rename原子重命名
   kInfoLogFile  // Either the current one, or an old one
 };
 

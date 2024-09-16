@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.tcc": "cpp",
+        "vector": "cpp",
+        "complex": "cpp",
+        "functional": "cpp",
+        "ratio": "cpp",
+        "cstdint": "cpp"
+    }
+}

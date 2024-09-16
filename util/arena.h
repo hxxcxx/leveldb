@@ -40,7 +40,7 @@ class Arena {
 
   // Allocation state
   char* alloc_ptr_;
-  size_t alloc_bytes_remaining_;
+  size_t alloc_bytes_remaining_;//剩余字节数
 
   // Array of new[] allocated memory blocks
   std::vector<char*> blocks_;
@@ -49,7 +49,7 @@ class Arena {
   //
   // TODO(costan): This member is accessed via atomics, but the others are
   //               accessed without any locking. Is this OK?
-  std::atomic<size_t> memory_usage_;
+  std::atomic<size_t> memory_usage_;//记录内存使用情况
 };
 
 inline char* Arena::Allocate(size_t bytes) {
