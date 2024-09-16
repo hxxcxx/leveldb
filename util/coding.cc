@@ -100,7 +100,7 @@ const char* GetVarint32PtrFallback(const char* p, const char* limit,
   }
   return nullptr;
 }
-
+//GetVarint32Ptr还未阅读细节实现
 bool GetVarint32(Slice* input, uint32_t* value) {
   const char* p = input->data();
   const char* limit = p + input->size();
@@ -141,7 +141,7 @@ bool GetVarint64(Slice* input, uint64_t* value) {
     return true;
   }
 }
-
+//取出key长度后remove这段长度，继续value取值。在GetVarint32函数中取出变长的key(value)size后同样移除了这段长度
 bool GetLengthPrefixedSlice(Slice* input, Slice* result) {
   uint32_t len;
   if (GetVarint32(input, &len) && input->size() >= len) {

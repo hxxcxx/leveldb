@@ -30,6 +30,9 @@ namespace leveldb {
 
 class Slice;
 
+/*
+seqnumber 8 cout 4 valuetype 1 keysize(varint) userkey valuesize(varint) uservalue 
+*/
 class LEVELDB_EXPORT WriteBatch {
  public:
   class LEVELDB_EXPORT Handler {

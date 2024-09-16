@@ -48,6 +48,7 @@ Status WriteBatch::Iterate(Handler* handler) const {
   input.remove_prefix(kHeader);
   Slice key, value;
   int found = 0;
+  //WriteBatch取keyvalue
   while (!input.empty()) {
     found++;
     char tag = input[0];
@@ -144,6 +145,7 @@ void WriteBatchInternal::SetContents(WriteBatch* b, const Slice& contents) {
 void WriteBatchInternal::Append(WriteBatch* dst, const WriteBatch* src) {
   SetCount(dst, Count(dst) + Count(src));
   assert(src->rep_.size() >= kHeader);
+  //合并在一起后面的WriteBatch的12位就不再需要
   dst->rep_.append(src->rep_.data() + kHeader, src->rep_.size() - kHeader);
 }
 
